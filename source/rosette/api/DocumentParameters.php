@@ -33,19 +33,25 @@ class DocumentParameters extends RosetteParamsSetBase
     public $contentUri;
 
     /**
-     * @var string contentType is the type of content RosetteConstants::$DataFormat (optional)
-     */
-    public $contentType;
-
-    /**
-     * @var string unit is the RosetteConstants::$InputUnit (optional)
-     */
-    public $unit;
-
-    /**
      * @var string language is the language of the content (optional)
      */
     public $language;
+
+    /**
+     * @var string multiPartContent contains content for multipart packaging.  Private to prevent
+     * processing by the serializer
+     */
+    private $multiPartContent;
+
+    /**
+     * @var string fileName is the name of the file containing content to be analyzed
+     */
+    public $fileName;
+
+    /**
+     * @var string genre to categorize the input data
+     */
+    public $genre;
 
     /**
      * Constructor.
@@ -56,9 +62,34 @@ class DocumentParameters extends RosetteParamsSetBase
     {
         $this->content = '';
         $this->contentUri = '';
-        $this->contentType = '';
-        $this->unit = RosetteConstants::$InputUnit['DOC'];
         $this->language = '';
+        $this->multiPartContent = '';
+        $this->genre = '';
+    }
+
+    /**
+     * Setter for multiPartContent. Clears the content and contentUri properties if it contains
+     * data
+     *
+     * @param $str_content
+     */
+    public function setMultiPartContent($str_content)
+    {
+        $this->multiPartContent = trim($str_content);
+        if (strlen($str_content) > 0) {
+            $this->content = '';
+            $this->contentUri = '';
+        }
+    }
+
+    /**
+     * Getter for multiPartContent
+     *
+     * @return string
+     */
+    public function getMultiPartContent()
+    {
+        return $this->multiPartContent;
     }
 
     /**
@@ -68,19 +99,21 @@ class DocumentParameters extends RosetteParamsSetBase
      */
     public function validate()
     {
-        if (empty(trim($this->content))) {
-            if (empty(trim($this->contentUri))) {
-                throw new RosetteException(
-                    'Must supply one of Content or ContentUri',
-                    RosetteException::$INVALID_DATATYPE
-                );
-            }
-        } else {
-            if (!empty(trim($this->contentUri))) {
-                throw new RosetteException(
-                    'Cannot supply both Content and ContentUri',
-                    RosetteException::$INVALID_DATATYPE
-                );
+        if (empty(trim($this->multiPartContent))) {
+            if (empty(trim($this->content))) {
+                if (empty(trim($this->contentUri))) {
+                    throw new RosetteException(
+                        'Must supply one of Content or ContentUri',
+                        RosetteException::$INVALID_DATATYPE
+                    );
+                }
+            } else {
+                if (!empty(trim($this->contentUri))) {
+                    throw new RosetteException(
+                        'Cannot supply both Content and ContentUri',
+                        RosetteException::$INVALID_DATATYPE
+                    );
+                }
             }
         }
     }
@@ -89,21 +122,16 @@ class DocumentParameters extends RosetteParamsSetBase
      * Loads a file into the object.
      *
      * The file will be read as bytes; the appropriate conversion will be determined by the server.
-     * The document unit size remains
-     * by default L{InputUnit.DOC}.
      *
      * @param $path : Pathname of a file acceptable to the C{open}
      * function.
-     * @param null $dataType
      *
      * @throws RosetteException
      */
-    public function loadDocumentFile($path, $dataType = null)
+    public function loadDocumentFile($path)
     {
-        if (!$dataType) {
-            $dataType = RosetteConstants::$DataFormat['UNSPECIFIED'];
-        }
-        $this->loadDocumentString(base64_encode(file_get_contents($path)), $dataType);
+        $this->loadDocumentString(file_get_contents($path), true);
+        $this->fileName = $path;
     }
 
     /**
@@ -111,17 +139,19 @@ class DocumentParameters extends RosetteParamsSetBase
      *
      * The string will be taken as bytes or as Unicode dependent upon its native type and the data type asked for;
      * if the type is HTML or XHTML, bytes are expected, the encoding to be determined by the server.
-     * The document unit size remains (by default) L{InputUnit.DOC}.
      *
      * @param $stringData
-     * @param $dataType
+     * @param $multiPart
      *
      * @throws RosetteException
      */
-    public function loadDocumentString($stringData, $dataType)
+    public function loadDocumentString($stringData, $multiPart = false)
     {
-        $this->content = $stringData;
-        $this->contentType = $dataType;
-        $this->unit = RosetteConstants::$InputUnit['DOC'];
+        if ($multiPart === true) {
+            $this->setMultiPartContent($stringData);
+        } else {
+            $this->content = $stringData;
+            $this->multiPartContent = '';
+        }
     }
 }
