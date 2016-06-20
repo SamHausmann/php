@@ -1,4 +1,4 @@
-FROM rosetteapi/docker-base-layer
+FROM rosetteapi/docker-base-layer:RCB-414
 MAINTAINER Fiona Hasanaj
 ENV LANGUAGE=php
 
