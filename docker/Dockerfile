@@ -1,4 +1,4 @@
-FROM rosetteapi/docker-base-layer:RCB-414
+FROM rosetteapi/docker-base-layer:latest
 MAINTAINER Fiona Hasanaj
 ENV LANGUAGE=php
 
@@ -29,12 +29,8 @@ RUN wget -O /usr/local/bin/composer https://getcomposer.org/composer.phar && \
 # copy over the necessary files
 RUN mkdir /test-dev/tests
 COPY composer.json /test-dev/composer.json
-WORKDIR /test-dev
 
 RUN composer install
 
-# specify docker volume
-VOLUME ["/source"]
-
 # allow interactive bash inside docker container
-CMD ./docker-entrypoint.sh $API_KEY $FILENAME $ALT_URL $GIT_USERNAME $VERSION $LANGUAGE; /bin/bash
+CMD ./docker-entrypoint.sh $API_KEY $FILENAME $ALT_URL $GIT_USERNAME $VERSION $LANGUAGE
